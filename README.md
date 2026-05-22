@@ -16,7 +16,7 @@ A personal knitting, crochet, embroidery & cross-stitch pattern library. Upload 
 ### 1. Install dependencies
 
 ```bash
-pnpm install
+npm install
 ```
 
 ### 2. Configure AWS
@@ -40,7 +40,7 @@ export const environment = {
 ### 3. Start the dev server
 
 ```bash
-pnpm start
+npm start
 ```
 
 Navigate to `http://localhost:4200/`.
@@ -48,13 +48,13 @@ Navigate to `http://localhost:4200/`.
 ## Building
 
 ```bash
-pnpm build
+npm build
 ```
 
 ## Running tests
 
 ```bash
-pnpm test
+npm test
 ```
 
 ## Project Structure
