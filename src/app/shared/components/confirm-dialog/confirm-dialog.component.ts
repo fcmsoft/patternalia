@@ -6,40 +6,7 @@ import { ButtonModule } from 'primeng/button';
   selector: 'app-confirm-dialog',
   imports: [DialogModule, ButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `
-    <p-dialog
-      [header]="title()"
-      [visible]="visible()"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [style]="{ width: '400px' }"
-      (onHide)="cancelled.emit()"
-      role="alertdialog"
-      [attr.aria-labelledby]="'confirm-dialog-title'"
-      [attr.aria-describedby]="'confirm-dialog-msg'"
-    >
-      <p id="confirm-dialog-msg" class="text-gray-700">{{ message() }}</p>
-      <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-2">
-          <button
-            pButton
-            type="button"
-            label="Cancel"
-            severity="secondary"
-            (click)="cancelled.emit()"
-          ></button>
-          <button
-            pButton
-            type="button"
-            [label]="confirmLabel()"
-            [severity]="confirmSeverity()"
-            (click)="confirmed.emit()"
-          ></button>
-        </div>
-      </ng-template>
-    </p-dialog>
-  `,
+  templateUrl: './confirm-dialog.component.html',
 })
 export class ConfirmDialogComponent {
   readonly visible = input.required<boolean>();
