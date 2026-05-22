@@ -7,7 +7,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { ChipsModule } from 'primeng/chips';
 import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
@@ -28,7 +27,6 @@ import type { Category } from '../../../../core/models';
     TextareaModule,
     SelectModule,
     MultiSelectModule,
-    ChipsModule,
     ToastModule,
     MessageModule,
   ],
@@ -76,7 +74,7 @@ export class PatternUploadComponent implements OnInit {
     craft: [null as CraftType | null, Validators.required],
     difficulty: [null as DifficultyLevel | null],
     categoryIds: [[] as string[]],
-    tags: [[] as string[]],
+    tagsInput: [''],
     notes: [''],
     pinterestUrl: [''],
     otherLinks: this.fb.array<ReturnType<typeof this.buildLinkGroup>>([]),
@@ -148,6 +146,13 @@ export class PatternUploadComponent implements OnInit {
     this.otherLinks.removeAt(i);
   }
 
+  protected parseTags(value: string | null | undefined): string[] {
+    return (value ?? '')
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
   async submit(): Promise<void> {
     if (this.form.invalid || !this.selectedFile()) return;
     this.saving.set(true);
@@ -183,7 +188,7 @@ export class PatternUploadComponent implements OnInit {
             difficulty: v.difficulty || undefined,
             categoryIds: v.categoryIds ?? [],
             s3Key,
-            tags: v.tags ?? [],
+            tags: this.parseTags(v.tagsInput),
             notes: v.notes || undefined,
             externalLinks: {
               ravelryId: rv ? String(rv.id) : undefined,
