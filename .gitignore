@@ -45,3 +45,8 @@ Thumbs.db
 
 # Environment secrets — copy environment.ts and fill in your AWS values
 # src/environments/environment.ts is committed with placeholder values only
+
+# amplify
+.amplify
+amplify_outputs*
+amplifyconfiguration*
