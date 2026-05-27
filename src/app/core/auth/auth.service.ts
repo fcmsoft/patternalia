@@ -13,11 +13,13 @@ import {
   type ConfirmSignUpInput,
   type ResetPasswordInput,
   type ConfirmResetPasswordInput,
+  fetchUserAttributes,
 } from 'aws-amplify/auth';
 
 export interface AuthUser {
   userId: string;
   username: string;
+  nickname?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,7 +34,8 @@ export class AuthService {
   async initialize(): Promise<void> {
     try {
       const { userId, username } = await getCurrentUser();
-      this._currentUser.set({ userId, username });
+      const userData = await fetchUserAttributes();
+      this._currentUser.set({ userId, username, nickname: userData.nickname });
     } catch {
       this._currentUser.set(null);
     } finally {
@@ -44,7 +47,8 @@ export class AuthService {
     const { isSignedIn } = await signIn(input);
     if (isSignedIn) {
       const { userId, username } = await getCurrentUser();
-      this._currentUser.set({ userId, username });
+      const userData = await fetchUserAttributes();
+      this._currentUser.set({ userId, username, nickname: userData.nickname });
     }
   }
 
