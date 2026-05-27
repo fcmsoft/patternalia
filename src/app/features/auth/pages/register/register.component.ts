@@ -29,6 +29,7 @@ export class RegisterComponent {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
+    nickname: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
@@ -38,8 +39,17 @@ export class RegisterComponent {
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
-      const { email, password } = this.form.getRawValue();
-      await this.auth.register({ username: email!, password: password! });
+      const { nickname, email, password } = this.form.getRawValue();
+      await this.auth.register({
+        username: email!,
+        password: password!,
+        options: {
+          userAttributes: {
+            email: email!,
+            nickname: nickname!,
+          },
+        },
+      });
       this.router.navigate(['/auth/confirm'], { queryParams: { email } });
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Registration failed.');

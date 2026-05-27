@@ -14,6 +14,22 @@
       }
 
       <div class="flex flex-col gap-1">
+        <label for="nickname" class="text-sm font-medium text-gray-700">Nickname</label>
+        <input
+          pInputText
+          id="nickname"
+          type="text"
+          formControlName="nickname"
+          autocomplete="nickname"
+          class="w-full"
+          aria-required="true"
+        />
+        @if (form.controls.nickname.invalid && form.controls.nickname.touched) {
+          <small class="text-red-600">Nickname is required (minimum 2 characters).</small>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1">
         <label for="email" class="text-sm font-medium text-gray-700">Email</label>
         <input
           pInputText
