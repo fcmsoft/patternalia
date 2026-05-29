@@ -60,25 +60,23 @@ export class CategoriesComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadCategories();
+    void this.loadCategories();
   }
 
-  private loadCategories(): void {
+  private async loadCategories(): Promise<void> {
     this.loading.set(true);
-    this.categoryService.getAll().subscribe({
-      next: (cats) => {
-        this.categories.set(cats);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load categories.',
-        });
-        this.loading.set(false);
-      },
-    });
+    try {
+      const cats = await this.categoryService.getAll();
+      this.categories.set(cats);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load categories.',
+      });
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   protected openCreate(): void {
@@ -101,7 +99,7 @@ export class CategoriesComponent implements OnInit {
     this.dialogVisible.set(false);
   }
 
-  protected save(): void {
+  protected async save(): Promise<void> {
     if (this.form.invalid) return;
     this.saving.set(true);
     const value = this.form.getRawValue();
@@ -111,34 +109,32 @@ export class CategoriesComponent implements OnInit {
       color: value.color || undefined,
     };
     const editing = this.editingCategory();
-    const request$ = editing
+    const request = editing
       ? this.categoryService.update(editing.id, dto)
       : this.categoryService.create(dto);
 
-    request$.subscribe({
-      next: (saved) => {
-        if (editing) {
-          this.categories.update((cats) => cats.map((c) => (c.id === saved.id ? saved : c)));
-        } else {
-          this.categories.update((cats) => [...cats, saved]);
-        }
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Saved',
-          detail: `Category "${saved.name}" saved.`,
-        });
-        this.dialogVisible.set(false);
-        this.saving.set(false);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to save category.',
-        });
-        this.saving.set(false);
-      },
-    });
+    try {
+      const saved = await request;
+      if (editing) {
+        this.categories.update((cats) => cats.map((c) => (c.id === saved.id ? saved : c)));
+      } else {
+        this.categories.update((cats) => [...cats, saved]);
+      }
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Saved',
+        detail: `Category "${saved.name}" saved.`,
+      });
+      this.dialogVisible.set(false);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to save category.',
+      });
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   protected confirmDelete(category: Category): void {
@@ -146,29 +142,27 @@ export class CategoriesComponent implements OnInit {
     this.deleteDialogVisible.set(true);
   }
 
-  protected deleteConfirmed(): void {
+  protected async deleteConfirmed(): Promise<void> {
     const cat = this.categoryToDelete();
     if (!cat) return;
-    this.categoryService.delete(cat.id).subscribe({
-      next: () => {
-        this.categories.update((cats) => cats.filter((c) => c.id !== cat.id));
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Deleted',
-          detail: `"${cat.name}" deleted.`,
-        });
-        this.deleteDialogVisible.set(false);
-        this.categoryToDelete.set(null);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to delete category.',
-        });
-        this.deleteDialogVisible.set(false);
-      },
-    });
+    try {
+      await this.categoryService.delete(cat.id);
+      this.categories.update((cats) => cats.filter((c) => c.id !== cat.id));
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Deleted',
+        detail: `"${cat.name}" deleted.`,
+      });
+      this.categoryToDelete.set(null);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to delete category.',
+      });
+    } finally {
+      this.deleteDialogVisible.set(false);
+    }
   }
 
   protected cancelDelete(): void {

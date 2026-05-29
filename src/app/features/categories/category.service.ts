@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { generateClient } from 'aws-amplify/data';
-import { from, map, Observable } from 'rxjs';
 import type { Schema } from '../../../../amplify/data/resource';
+import { generateClient } from 'aws-amplify/data';
 import { Category, CreateCategoryDto, UpdateCategoryDto } from '../../core/models';
 
 @Injectable({ providedIn: 'root' })
@@ -23,39 +22,29 @@ export class CategoryService {
     return result.data;
   }
 
-  getAll(): Observable<Category[]> {
-    return from(this.client.models.Category.list()).pipe(
-      map((result) => {
-        if (result.errors && result.errors.length > 0) {
-          throw result.errors[0];
-        }
+  async getAll(): Promise<Category[]> {
+    const result = await this.client.models.Category.list();
+    if (result.errors && result.errors.length > 0) {
+      throw result.errors[0];
+    }
 
-        return result.data;
-      }),
-    );
+    return result.data;
   }
 
-  create(dto: CreateCategoryDto): Observable<Category> {
-    return from(this.client.models.Category.create(dto)).pipe(
-      map((result) => this.ensureData(result, 'Category creation returned no data.')),
-    );
+  async create(dto: CreateCategoryDto): Promise<Category> {
+    const result = await this.client.models.Category.create(dto);
+    return this.ensureData(result, 'Category creation returned no data.');
   }
 
-  update(id: string, dto: UpdateCategoryDto): Observable<Category> {
-    return from(this.client.models.Category.update({ id, ...dto })).pipe(
-      map((result) => this.ensureData(result, 'Category update returned no data.')),
-    );
+  async update(id: string, dto: UpdateCategoryDto): Promise<Category> {
+    const result = await this.client.models.Category.update({ id, ...dto });
+    return this.ensureData(result, 'Category update returned no data.');
   }
 
-  delete(id: string): Observable<void> {
-    return from(this.client.models.Category.delete({ id })).pipe(
-      map((result) => {
-        if (result.errors && result.errors.length > 0) {
-          throw result.errors[0];
-        }
-
-        return void 0;
-      }),
-    );
+  async delete(id: string): Promise<void> {
+    const result = await this.client.models.Category.delete({ id });
+    if (result.errors && result.errors.length > 0) {
+      throw result.errors[0];
+    }
   }
 }

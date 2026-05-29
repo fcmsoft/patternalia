@@ -65,9 +65,22 @@ export class PatternsListComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.categoryService.getAll().subscribe((cats) => this.categories.set(cats));
+    void this.loadCategories();
     this.loadPatterns();
     this.filterForm.valueChanges.subscribe(() => this.loadPatterns());
+  }
+
+  private async loadCategories(): Promise<void> {
+    try {
+      const cats = await this.categoryService.getAll();
+      this.categories.set(cats);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load categories.',
+      });
+    }
   }
 
   private loadPatterns(): void {

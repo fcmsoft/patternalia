@@ -84,7 +84,7 @@ export class PatternEditComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.categoryService.getAll().subscribe((cats) => this.categories.set(cats));
+    void this.loadCategories();
     this.patternService.getById(this.id()).subscribe({
       next: (p) => {
         this.pattern.set(p);
@@ -121,6 +121,19 @@ export class PatternEditComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  private async loadCategories(): Promise<void> {
+    try {
+      const cats = await this.categoryService.getAll();
+      this.categories.set(cats);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load categories.',
+      });
+    }
   }
 
   protected searchRavelry(): void {

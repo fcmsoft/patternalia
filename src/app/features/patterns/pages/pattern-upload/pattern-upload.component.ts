@@ -85,7 +85,20 @@ export class PatternUploadComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.categoryService.getAll().subscribe((cats) => this.categories.set(cats));
+    void this.loadCategories();
+  }
+
+  private async loadCategories(): Promise<void> {
+    try {
+      const cats = await this.categoryService.getAll();
+      this.categories.set(cats);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load categories.',
+      });
+    }
   }
 
   protected onFileSelect(event: Event): void {
