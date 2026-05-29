@@ -36,6 +36,7 @@ export class AuthService {
       const { userId, username } = await getCurrentUser();
       const userData = await fetchUserAttributes();
       this._currentUser.set({ userId, username, nickname: userData.nickname });
+      console.log('User session restored:', username);
     } catch {
       this._currentUser.set(null);
     } finally {
@@ -49,6 +50,7 @@ export class AuthService {
       const { userId, username } = await getCurrentUser();
       const userData = await fetchUserAttributes();
       this._currentUser.set({ userId, username, nickname: userData.nickname });
+      console.log('User logged in:', username);
     }
   }
 

@@ -21,21 +21,7 @@ npm install
 
 ### 2. Configure AWS
 
-Edit `src/environments/environment.ts` and fill in your values:
-
-```ts
-export const environment = {
-  apiUrl: 'https://YOUR_API_GATEWAY_URL/dev',
-  amplify: {
-    Auth: {
-      Cognito: {
-        userPoolId: 'us-east-1_XXXXXXX',
-        userPoolClientId: 'XXXXXXXXXXXXXXXXXXXXXXXX',
-      },
-    },
-  },
-};
-```
+We are using AWS Amplify so you need to download your amplify_outputs.json and save it on src folder.
 
 ### 3. Start the dev server
 

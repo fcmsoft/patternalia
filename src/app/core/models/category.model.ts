@@ -1,12 +1,5 @@
-export interface Category {
-  id: string;
-  userId: string;
-  name: string;
-  description?: string;
-  color?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Schema } from '../../../../amplify/data/resource';
 
-export type CreateCategoryDto = Omit<Category, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
-export type UpdateCategoryDto = Partial<CreateCategoryDto>;
+export type Category = Schema['Category']['type'];
+export type CreateCategoryDto = Omit<Schema['Category']['createType'], 'id'>;
+export type UpdateCategoryDto = Omit<Schema['Category']['updateType'], 'id'>;
