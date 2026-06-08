@@ -5,7 +5,7 @@ import { Category, CreateCategoryDto, UpdateCategoryDto } from '../../core/model
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
-  private readonly client = generateClient<Schema>();
+  private readonly categoryClient = generateClient<Schema>().models.Category;
 
   private ensureData<T>(
     result: { data: T | null; errors?: readonly unknown[] | undefined },
@@ -23,7 +23,7 @@ export class CategoryService {
   }
 
   async getAll(): Promise<Category[]> {
-    const result = await this.client.models.Category.list();
+    const result = await this.categoryClient.list({ authMode: 'userPool' });
     if (result.errors && result.errors.length > 0) {
       throw result.errors[0];
     }
@@ -32,17 +32,17 @@ export class CategoryService {
   }
 
   async create(dto: CreateCategoryDto): Promise<Category> {
-    const result = await this.client.models.Category.create(dto);
+    const result = await this.categoryClient.create(dto, { authMode: 'userPool' });
     return this.ensureData(result, 'Category creation returned no data.');
   }
 
   async update(id: string, dto: UpdateCategoryDto): Promise<Category> {
-    const result = await this.client.models.Category.update({ id, ...dto });
+    const result = await this.categoryClient.update({ id, ...dto }, { authMode: 'userPool' });
     return this.ensureData(result, 'Category update returned no data.');
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.client.models.Category.delete({ id });
+    const result = await this.categoryClient.delete({ id }, { authMode: 'userPool' });
     if (result.errors && result.errors.length > 0) {
       throw result.errors[0];
     }
