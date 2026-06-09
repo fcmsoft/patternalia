@@ -152,13 +152,13 @@ export class PatternUploadComponent implements OnInit {
     if (this.form.invalid || !this.selectedFile()) return;
     this.saving.set(true);
 
-    const patternId = uuidv4();
     const file = this.selectedFile()!;
     const rv = this.linkedRavelryPattern();
 
     try {
       this.uploading.set(true);
-      const s3Key = await this.storageService.upload(patternId, file);
+      const s3Key = await this.storageService.upload(file);
+      console.log('File uploaded to S3 with key:', s3Key);
       this.uploading.set(false);
 
       // 3. Save pattern metadata

@@ -8,6 +8,9 @@ export const storage = defineStorage({
   },
   access: (allow) => ({
     'patterns/*': [allow.authenticated.to(['read', 'write', 'delete'])],
-    'thumbnails/*': [allow.authenticated.to(['read'])],
+    'thumbnails/*': [
+      allow.authenticated.to(['read']),
+      allow.resource(resizeFunction).to(['read', 'write']),
+    ],
   }),
 });
