@@ -23,7 +23,7 @@
     <div class="flex flex-col lg:flex-row gap-8">
       <!-- PDF viewer panel -->
       <div class="flex-1 min-h-[600px] bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <app-pdf-viewer [patternId]="p.id" />
+        <app-pdf-viewer [s3Key]="p.s3Key" />
       </div>
 
       <!-- Metadata panel -->

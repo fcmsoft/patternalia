@@ -74,39 +74,41 @@ export class PatternEditComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadCategories();
-    this.patternService.getById(this.id()).subscribe({
-      next: (p) => {
-        this.pattern.set(p);
-        this.form.patchValue({
-          title: p.title,
-          description: p.description ?? '',
-          craft: p.craft,
-          categoryIds: p.categoryIds,
-          notes: p.notes ?? '',
+    void this.loadPattern();
+  }
+
+  private async loadPattern(): Promise<void> {
+    try {
+      const p = await this.patternService.getById(this.id());
+      this.pattern.set(p);
+      this.form.patchValue({
+        title: p.title,
+        description: p.description ?? '',
+        craft: p.craft,
+        categoryIds: p.categoryIds,
+        notes: p.notes ?? '',
+      });
+      (p.otherUrls ?? []).forEach((l) => {
+        const g = this.buildLinkGroup();
+        g.patchValue(l);
+        this.otherLinks.push(g);
+      });
+      if (p.ravelryId) {
+        this.linkedRavelryPattern.set({
+          id: Number(p.ravelryId),
+          name: p.ravelryUrl ?? 'Ravelry pattern',
+          permalink: '',
         });
-        (p.otherUrls ?? []).forEach((l) => {
-          const g = this.buildLinkGroup();
-          g.patchValue(l);
-          this.otherLinks.push(g);
-        });
-        if (p.ravelryId) {
-          this.linkedRavelryPattern.set({
-            id: Number(p.ravelryId),
-            name: p.ravelryUrl ?? 'Ravelry pattern',
-            permalink: '',
-          });
-        }
-        this.loading.set(false);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Pattern not found.',
-        });
-        this.loading.set(false);
-      },
-    });
+      }
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Pattern not found.',
+      });
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async loadCategories(): Promise<void> {
@@ -166,15 +168,14 @@ export class PatternEditComponent implements OnInit {
     this.otherLinks.removeAt(i);
   }
 
-  protected save(): void {
+  protected async save(): Promise<void> {
     if (this.form.invalid) return;
     this.saving.set(true);
     const v = this.form.getRawValue();
     const rv = this.linkedRavelryPattern();
     const existing = this.pattern();
-
-    this.patternService
-      .update(this.id(), {
+    try {
+      await this.patternService.update(this.id(), {
         title: v.title!,
         description: v.description || undefined,
         craft: v.craft!,
@@ -187,17 +188,15 @@ export class PatternEditComponent implements OnInit {
         otherUrls: (v.otherLinks as { label: string; url: string }[]).filter(
           (l) => l.label && l.url,
         ),
-      })
-      .subscribe({
-        next: () => this.router.navigate(['/patterns', this.id()]),
-        error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to save.',
-          });
-          this.saving.set(false);
-        },
       });
+      void this.router.navigate(['/patterns', this.id()]);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to save.',
+      });
+      this.saving.set(false);
+    }
   }
 }

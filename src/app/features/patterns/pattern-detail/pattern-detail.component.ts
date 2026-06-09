@@ -40,20 +40,22 @@ export class PatternDetailComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadCategories();
-    this.patternService.getById(this.id()).subscribe({
-      next: (p) => {
-        this.pattern.set(p);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Pattern not found.',
-        });
-        this.loading.set(false);
-      },
-    });
+    void this.loadPattern();
+  }
+
+  private async loadPattern(): Promise<void> {
+    try {
+      const p = await this.patternService.getById(this.id());
+      this.pattern.set(p);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Pattern not found.',
+      });
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async loadCategories(): Promise<void> {
@@ -77,17 +79,18 @@ export class PatternDetailComponent implements OnInit {
     return this.categories().find((c) => c.id === id)?.color ?? '#6366f1';
   }
 
-  protected deleteConfirmed(): void {
+  protected async deleteConfirmed(): Promise<void> {
     const p = this.pattern();
     if (!p) return;
-    this.patternService.delete(p.id).subscribe({
-      next: () => this.router.navigate(['/patterns']),
-      error: () =>
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to delete.',
-        }),
-    });
+    try {
+      await this.patternService.delete(p.id);
+      void this.router.navigate(['/patterns']);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to delete.',
+      });
+    }
   }
 }

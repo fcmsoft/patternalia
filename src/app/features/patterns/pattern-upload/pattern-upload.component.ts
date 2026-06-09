@@ -12,7 +12,7 @@ import { MessageModule } from 'primeng/message';
 import { MessageService } from 'primeng/api';
 import { PatternService } from '../pattern.service';
 import { CategoryService } from '../../categories/category.service';
-import { StorageService } from '../../../shared/services/storage.service';
+import { StorageService } from '../storage.service';
 import { RavelryService, RavelryPattern } from '../../../shared/services/ravelry.service';
 import { CraftType } from '../../../core/models';
 import type { Category } from '../../../core/models';
@@ -157,40 +157,25 @@ export class PatternUploadComponent implements OnInit {
     const rv = this.linkedRavelryPattern();
 
     try {
-      // 1. Get presigned S3 upload URL
       this.uploading.set(true);
-      const { uploadUrl, s3Key } = await new Promise<{ uploadUrl: string; s3Key: string }>(
-        (resolve, reject) =>
-          this.storageService
-            .getUploadUrl(patternId, file.name)
-            .subscribe({ next: resolve, error: reject }),
-      );
-
-      // 2. Upload PDF to S3
-      await new Promise<void>((resolve, reject) =>
-        this.storageService.uploadFile(uploadUrl, file).subscribe({ next: resolve, error: reject }),
-      );
+      const s3Key = await this.storageService.upload(patternId, file);
       this.uploading.set(false);
 
       // 3. Save pattern metadata
       const v = this.form.getRawValue();
-      await new Promise<void>((resolve, reject) =>
-        this.patternService
-          .create({
-            title: v.title!,
-            description: v.description || undefined,
-            craft: v.craft!,
-            categoryIds: v.categoryIds ?? [],
-            s3Key,
-            notes: v.notes || undefined,
-            ravelryId: rv ? String(rv.id) : undefined,
-            ravelryUrl: rv ? `https://www.ravelry.com/patterns/library/${rv.permalink}` : undefined,
-            otherUrls: (v.otherLinks as { label: string; url: string }[]).filter(
-              (l) => l.label && l.url,
-            ),
-          })
-          .subscribe({ next: () => resolve(), error: reject }),
-      );
+      await this.patternService.create({
+        title: v.title!,
+        description: v.description || undefined,
+        craft: v.craft!,
+        categoryIds: v.categoryIds ?? [],
+        s3Key,
+        notes: v.notes || undefined,
+        ravelryId: rv ? String(rv.id) : undefined,
+        ravelryUrl: rv ? `https://www.ravelry.com/patterns/library/${rv.permalink}` : undefined,
+        otherUrls: (v.otherLinks as { label: string; url: string }[]).filter(
+          (l) => l.label && l.url,
+        ),
+      });
 
       this.router.navigate(['/patterns']);
     } catch {

@@ -66,8 +66,8 @@ export class PatternsListComponent implements OnInit {
 
   ngOnInit(): void {
     void this.loadCategories();
-    this.loadPatterns();
-    this.filterForm.valueChanges.subscribe(() => this.loadPatterns());
+    void this.loadPatterns();
+    this.filterForm.valueChanges.subscribe(() => void this.loadPatterns());
   }
 
   private async loadCategories(): Promise<void> {
@@ -83,29 +83,25 @@ export class PatternsListComponent implements OnInit {
     }
   }
 
-  private loadPatterns(): void {
+  private async loadPatterns(): Promise<void> {
     this.loading.set(true);
     const { search, categoryId, craft } = this.filterForm.getRawValue();
-    this.patternService
-      .getAll({
+    try {
+      const patterns = await this.patternService.getAll({
         search: search || undefined,
         categoryId: categoryId || undefined,
         craft: craft || undefined,
-      })
-      .subscribe({
-        next: (patterns) => {
-          this.patterns.set(patterns);
-          this.loading.set(false);
-        },
-        error: () => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load patterns.',
-          });
-          this.loading.set(false);
-        },
       });
+      this.patterns.set(patterns);
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to load patterns.',
+      });
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   protected getCategoryName(id: string): string {
@@ -121,29 +117,27 @@ export class PatternsListComponent implements OnInit {
     this.deleteDialogVisible.set(true);
   }
 
-  protected deleteConfirmed(): void {
+  protected async deleteConfirmed(): Promise<void> {
     const p = this.patternToDelete();
     if (!p) return;
-    this.patternService.delete(p.id).subscribe({
-      next: () => {
-        this.patterns.update((list) => list.filter((x) => x.id !== p.id));
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Deleted',
-          detail: `"${p.title}" deleted.`,
-        });
-        this.deleteDialogVisible.set(false);
-        this.patternToDelete.set(null);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to delete pattern.',
-        });
-        this.deleteDialogVisible.set(false);
-      },
-    });
+    try {
+      await this.patternService.delete(p.id);
+      this.patterns.update((list) => list.filter((x) => x.id !== p.id));
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Deleted',
+        detail: `"${p.title}" deleted.`,
+      });
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Failed to delete pattern.',
+      });
+    } finally {
+      this.deleteDialogVisible.set(false);
+      this.patternToDelete.set(null);
+    }
   }
 
   protected cancelDelete(): void {

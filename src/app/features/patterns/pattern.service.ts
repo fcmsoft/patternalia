@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Observable, defer, from, map } from 'rxjs';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import {
@@ -93,72 +92,54 @@ export class PatternService {
     };
   }
 
-  getAll(filters?: PatternFilters): Observable<Pattern[]> {
-    return defer(() => from(this.getPatternClient().list({ authMode: this.authMode }))).pipe(
-      map((result) => {
-        if (result.errors && result.errors.length > 0) {
-          throw result.errors[0];
-        }
-        return result.data.map((item) => this.toPattern(item));
-      }),
-      map((patterns) => {
-        const search = filters?.search?.trim().toLowerCase();
+  async getAll(filters?: PatternFilters): Promise<Pattern[]> {
+    const result = await this.getPatternClient().list({ authMode: this.authMode });
+    if (result.errors && result.errors.length > 0) {
+      throw result.errors[0];
+    }
 
-        return patterns.filter((pattern) => {
-          const matchesCategory =
-            !filters?.categoryId || pattern.categoryIds.includes(filters.categoryId);
-          const matchesCraft = !filters?.craft || pattern.craft === filters.craft;
-          const matchesSearch =
-            !search ||
-            pattern.title.toLowerCase().includes(search) ||
-            (pattern.description ?? '').toLowerCase().includes(search) ||
-            (pattern.notes ?? '').toLowerCase().includes(search);
+    const patterns = result.data.map((item) => this.toPattern(item));
+    const search = filters?.search?.trim().toLowerCase();
 
-          return matchesCategory && matchesCraft && matchesSearch;
-        });
-      }),
-    );
+    return patterns.filter((pattern) => {
+      const matchesCategory =
+        !filters?.categoryId || pattern.categoryIds.includes(filters.categoryId);
+      const matchesCraft = !filters?.craft || pattern.craft === filters.craft;
+      const matchesSearch =
+        !search ||
+        pattern.title.toLowerCase().includes(search) ||
+        (pattern.description ?? '').toLowerCase().includes(search) ||
+        (pattern.notes ?? '').toLowerCase().includes(search);
+
+      return matchesCategory && matchesCraft && matchesSearch;
+    });
   }
 
-  getById(id: string): Observable<Pattern> {
-    return defer(() => from(this.getPatternClient().get({ id }, { authMode: this.authMode }))).pipe(
-      map((result) => this.ensureData(result, 'Pattern not found.')),
-      map((item) => this.toPattern(item)),
-    );
+  async getById(id: string): Promise<Pattern> {
+    const result = await this.getPatternClient().get({ id }, { authMode: this.authMode });
+    return this.toPattern(this.ensureData(result, 'Pattern not found.'));
   }
 
-  create(dto: CreatePatternDto): Observable<Pattern> {
-    return defer(() =>
-      from(this.getPatternClient().create(this.toCreateInput(dto), { authMode: this.authMode })),
-    ).pipe(
-      map((result) => this.ensureData(result, 'Pattern creation returned no data.')),
-      map((item) => this.toPattern(item)),
+  async create(dto: CreatePatternDto): Promise<Pattern> {
+    const result = await this.getPatternClient().create(
+      this.toCreateInput(dto),
+      { authMode: this.authMode },
     );
+    return this.toPattern(this.ensureData(result, 'Pattern creation returned no data.'));
   }
 
-  update(id: string, dto: UpdatePatternDto): Observable<Pattern> {
-    return defer(() =>
-      from(
-        this.getPatternClient().update(
-          { id, ...this.toUpdateInput(dto) },
-          { authMode: this.authMode },
-        ),
-      ),
-    ).pipe(
-      map((result) => this.ensureData(result, 'Pattern update returned no data.')),
-      map((item) => this.toPattern(item)),
+  async update(id: string, dto: UpdatePatternDto): Promise<Pattern> {
+    const result = await this.getPatternClient().update(
+      { id, ...this.toUpdateInput(dto) },
+      { authMode: this.authMode },
     );
+    return this.toPattern(this.ensureData(result, 'Pattern update returned no data.'));
   }
 
-  delete(id: string): Observable<void> {
-    return defer(() =>
-      from(this.getPatternClient().delete({ id }, { authMode: this.authMode })),
-    ).pipe(
-      map((result) => {
-        if (result.errors && result.errors.length > 0) {
-          throw result.errors[0];
-        }
-      }),
-    );
+  async delete(id: string): Promise<void> {
+    const result = await this.getPatternClient().delete({ id }, { authMode: this.authMode });
+    if (result.errors && result.errors.length > 0) {
+      throw result.errors[0];
+    }
   }
 }
