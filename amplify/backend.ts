@@ -19,6 +19,6 @@ backend.storage.resources.bucket.addEventNotification(
   EventType.OBJECT_CREATED_PUT,
   new LambdaDestination(backend.resizeFunction.resources.lambda),
   {
-    prefix: 'originals/',
+    prefix: 'patterns/',
   },
 );
