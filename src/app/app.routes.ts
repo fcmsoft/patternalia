@@ -9,24 +9,22 @@ export const routes: Routes = [
       {
         path: 'login',
         loadComponent: () =>
-          import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
+          import('./features/auth/login/login.component').then((m) => m.LoginComponent),
       },
       {
         path: 'register',
         loadComponent: () =>
-          import('./features/auth/pages/register/register.component').then(
-            (m) => m.RegisterComponent,
-          ),
+          import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
       },
       {
         path: 'confirm',
         loadComponent: () =>
-          import('./features/auth/pages/confirm/confirm.component').then((m) => m.ConfirmComponent),
+          import('./features/auth/confirm/confirm.component').then((m) => m.ConfirmComponent),
       },
       {
         path: 'forgot-password',
         loadComponent: () =>
-          import('./features/auth/pages/forgot-password/forgot-password.component').then(
+          import('./features/auth/forgot-password/forgot-password.component').then(
             (m) => m.ForgotPasswordComponent,
           ),
       },
@@ -42,35 +40,33 @@ export const routes: Routes = [
       {
         path: 'categories',
         loadComponent: () =>
-          import('./features/categories/pages/categories/categories.component').then(
-            (m) => m.CategoriesComponent,
-          ),
+          import('./features/categories/categories.component').then((m) => m.CategoriesComponent),
       },
       {
         path: 'patterns',
         loadComponent: () =>
-          import('./features/patterns/pages/patterns-list/patterns-list.component').then(
+          import('./features/patterns/patterns-list/patterns-list.component').then(
             (m) => m.PatternsListComponent,
           ),
       },
       {
         path: 'patterns/upload',
         loadComponent: () =>
-          import('./features/patterns/pages/pattern-upload/pattern-upload.component').then(
+          import('./features/patterns/pattern-upload/pattern-upload.component').then(
             (m) => m.PatternUploadComponent,
           ),
       },
       {
         path: 'patterns/:id',
         loadComponent: () =>
-          import('./features/patterns/pages/pattern-detail/pattern-detail.component').then(
+          import('./features/patterns/pattern-detail/pattern-detail.component').then(
             (m) => m.PatternDetailComponent,
           ),
       },
       {
         path: 'patterns/:id/edit',
         loadComponent: () =>
-          import('./features/patterns/pages/pattern-edit/pattern-edit.component').then(
+          import('./features/patterns/pattern-edit/pattern-edit.component').then(
             (m) => m.PatternEditComponent,
           ),
       },
