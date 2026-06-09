@@ -6,13 +6,18 @@ export class StorageService {
   async upload(file: File): Promise<string> {
     console.log('Uploading file:', file);
     const s3Key = `patterns/${file.name}`;
-    const result = await uploadData({
-      path: s3Key,
-      data: file,
-      options: { contentType: file.type },
-    }).result;
-    console.log('Upload result:', result);
-    return s3Key;
+    try {
+      const result = await uploadData({
+        path: s3Key,
+        data: file,
+        options: { contentType: file.type },
+      }).result;
+      console.log('Upload result:', result);
+      return s3Key;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      throw error;
+    }
   }
 
   async getUrl(s3Key: string): Promise<string> {

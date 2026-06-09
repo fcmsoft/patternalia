@@ -7,7 +7,10 @@ export const storage = defineStorage({
     onUpload: resizeFunction,
   },
   access: (allow) => ({
-    'patterns/*': [allow.authenticated.to(['read', 'write', 'delete'])],
+    'patterns/*': [
+      allow.authenticated.to(['read', 'write', 'delete']),
+      allow.resource(resizeFunction).to(['read']),
+    ],
     'thumbnails/*': [
       allow.authenticated.to(['read']),
       allow.resource(resizeFunction).to(['read', 'write']),
