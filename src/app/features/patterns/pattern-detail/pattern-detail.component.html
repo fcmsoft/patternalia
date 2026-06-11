@@ -23,7 +23,11 @@
     <div class="flex flex-col lg:flex-row gap-8">
       <!-- PDF viewer panel -->
       <div class="flex-1 min-h-[600px] bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <app-pdf-viewer [s3Key]="p.s3Key" />
+        <app-pdf-viewer
+          [url]="pdfUrl()"
+          [saving]="savingAnnotations()"
+          (save)="saveAnnotatedPdf($event)"
+        />
       </div>
 
       <!-- Metadata panel -->
@@ -61,18 +65,18 @@
           </div>
 
           <!-- Categories -->
-          @if (p.categoryIds.length > 0) {
+          @if (patternCategories().length > 0) {
             <div>
               <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                 Categories
               </p>
               <div class="flex flex-wrap gap-1">
-                @for (catId of p.categoryIds; track catId) {
+                @for (cat of patternCategories(); track cat.id) {
                   <span
                     class="inline-block px-2 py-0.5 rounded-full text-xs font-medium text-white"
-                    [style.background-color]="getCategoryColor(catId)"
+                    [style.background-color]="cat.color"
                   >
-                    {{ getCategoryName(catId) }}
+                    {{ cat.name }}
                   </span>
                 }
               </div>

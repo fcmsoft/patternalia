@@ -27,4 +27,31 @@ export class StorageService {
     });
     return url.toString();
   }
+
+  async getUrlIfExists(s3Key: string): Promise<string | null> {
+    try {
+      const { url } = await getUrl({
+        path: s3Key,
+        options: { validateObjectExistence: true },
+      });
+      return url.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  async uploadBlob(s3Key: string, blob: Blob, contentType: string): Promise<void> {
+    await uploadData({
+      path: s3Key,
+      data: blob,
+      options: { contentType },
+    }).result;
+  }
+
+  /** Key under which the user's annotated copy of a pattern PDF is stored. */
+  annotatedKey(s3Key: string): string {
+    return s3Key.startsWith('patterns/')
+      ? s3Key.replace('patterns/', 'annotated/')
+      : `annotated/${s3Key}`;
+  }
 }

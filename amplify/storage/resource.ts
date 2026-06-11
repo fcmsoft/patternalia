@@ -12,5 +12,8 @@ export const storage = defineStorage({
       allow.authenticated.to(['read']),
       allow.resource(resizeFunction).to(['read', 'write']),
     ],
+    // Annotated copies of pattern PDFs (highlights and notes saved by the user).
+    // Kept outside patterns/ so the resize lambda does not generate thumbnails for them.
+    'annotated/*': [allow.authenticated.to(['read', 'write', 'delete'])],
   }),
 });

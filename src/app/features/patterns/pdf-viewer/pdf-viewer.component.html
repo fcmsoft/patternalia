@@ -1,0 +1,37 @@
+<div class="w-full" role="region" aria-label="PDF viewer">
+  @if (url(); as pdfUrl) {
+    <div
+      class="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 border-b border-gray-200"
+    >
+      <span class="text-xs text-gray-500">
+        Highlight rows or add notes with the toolbar, then save your progress.
+      </span>
+      <button
+        pButton
+        type="button"
+        icon="pi pi-save"
+        label="Save progress"
+        size="small"
+        [loading]="exporting() || saving()"
+        (click)="saveProgress()"
+        aria-label="Save highlights and notes"
+      ></button>
+    </div>
+    <ngx-extended-pdf-viewer
+      [src]="pdfUrl"
+      height="600px"
+      [textLayer]="true"
+      [showHighlightEditor]="true"
+      [showTextEditor]="true"
+      [showDrawEditor]="true"
+      [showStampEditor]="false"
+      [showOpenFileButton]="false"
+      [showPropertiesButton]="false"
+      zoom="page-width"
+    />
+  } @else {
+    <div class="flex items-center justify-center" style="height: 600px">
+      <span class="text-gray-400 text-sm">Loading PDF…</span>
+    </div>
+  }
+</div>

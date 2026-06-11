@@ -22,7 +22,7 @@
     "@napi-rs/canvas": "^1.0.0",
     "@primeuix/themes": "^2.0.3",
     "aws-amplify": "^6.17.0",
-    "ng2-pdf-viewer": "^10.4.0",
+    "ngx-extended-pdf-viewer": "^27.0.0",
     "pdfjs-dist": "^6.0.227",
     "primeicons": "^7.0.0",
     "primeng": "^21.1.8",
