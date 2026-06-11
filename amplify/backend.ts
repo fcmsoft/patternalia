@@ -16,7 +16,9 @@ const backend = defineBackend({
 });
 
 backend.storage.resources.bucket.addEventNotification(
-  EventType.OBJECT_CREATED_PUT,
+  // OBJECT_CREATED covers both single PUT and multipart uploads; Amplify's
+  // uploadData switches to multipart for larger files.
+  EventType.OBJECT_CREATED,
   new LambdaDestination(backend.resizeFunction.resources.lambda),
   {
     prefix: 'patterns/',

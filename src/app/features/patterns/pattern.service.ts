@@ -1,5 +1,6 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
+import { StorageService } from './storage.service';
 import type { Schema } from '../../../../amplify/data/resource';
 import {
   Pattern,
@@ -19,6 +20,7 @@ export interface PatternFilters {
 export class PatternService {
   private readonly patternClient = generateClient<Schema>().models.Pattern;
   private readonly authMode = 'userPool' as const;
+  private readonly storage = inject(StorageService);
 
   private getPatternClient() {
     const client = this.patternClient;
@@ -140,6 +142,11 @@ export class PatternService {
     const result = await this.getPatternClient().delete({ id }, { authMode: this.authMode });
     if (result.errors && result.errors.length > 0) {
       throw result.errors[0];
+    }
+
+    const s3Key = result.data?.s3Key;
+    if (s3Key) {
+      await this.storage.removePatternFiles(s3Key);
     }
   }
 }

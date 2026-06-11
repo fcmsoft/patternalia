@@ -1,5 +1,7 @@
 import type { S3Handler } from 'aws-lambda';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import sharp from 'sharp';
 
 const THUMBNAIL_SIZE = 200;
@@ -59,12 +61,23 @@ async function createPdfThumbnail(pdfBuffer: Buffer): Promise<Buffer> {
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const { createCanvas } = await import('@napi-rs/canvas');
 
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+  // In Node there is no real worker; pdfjs falls back to a "fake worker" it
+  // loads via import(workerSrc), so this must point at the worker module.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.mjs';
+
+  // Lets pdfjs load the standard 14 fonts (Helvetica etc.) from disk for PDFs
+  // that reference them without embedding.
+  const require = createRequire(import.meta.url);
+  const standardFontDataUrl = path.join(
+    path.dirname(require.resolve('pdfjs-dist/package.json')),
+    'standard_fonts/',
+  );
 
   const doc = await pdfjsLib.getDocument({
     data: new Uint8Array(pdfBuffer),
     disableFontFace: true,
     useSystemFonts: false,
+    standardFontDataUrl,
   }).promise;
 
   const page = await doc.getPage(1);
@@ -73,14 +86,17 @@ async function createPdfThumbnail(pdfBuffer: Buffer): Promise<Buffer> {
   const viewport = page.getViewport({ scale });
 
   const canvas = createCanvas(Math.ceil(viewport.width), Math.ceil(viewport.height));
-  const ctx = canvas.getContext('2d');
 
-  /*   await page.render({
-    canvasContext: ctx as unknown as CanvasRenderingContext2D,
+  // pdfjs v6 takes the canvas itself (the canvasContext parameter is legacy
+  // and requires a DOM context); it calls getContext('2d') internally.
+  await page.render({
+    canvas: canvas as unknown as HTMLCanvasElement,
     viewport,
-  }).promise; */
+  }).promise;
 
-  return sharp(canvas.toBuffer('image/png'))
+  const png = canvas.toBuffer('image/png');
+
+  return sharp(png)
     .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, { fit: 'inside' })
     .flatten({ background: '#ffffff' })
     .jpeg({ quality: 85 })

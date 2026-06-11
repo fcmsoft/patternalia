@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { uploadData, getUrl } from 'aws-amplify/storage';
+import { uploadData, getUrl, remove } from 'aws-amplify/storage';
 
 @Injectable({ providedIn: 'root' })
 export class StorageService {
@@ -53,5 +53,28 @@ export class StorageService {
     return s3Key.startsWith('patterns/')
       ? s3Key.replace('patterns/', 'annotated/')
       : `annotated/${s3Key}`;
+  }
+
+  /** Key under which the resize lambda stores the thumbnail for a pattern. */
+  thumbnailKey(s3Key: string): string {
+    return s3Key.replace(/^patterns\//, 'thumbnails/').replace(/\.[^.]+$/, '.jpg');
+  }
+
+  /** Removes a pattern's original file plus its thumbnail and annotated copy. */
+  async removePatternFiles(s3Key: string): Promise<void> {
+    await remove({ path: s3Key });
+    // Thumbnail and annotated copy may never have been created.
+    await Promise.all([
+      this.removeIfExists(this.thumbnailKey(s3Key)),
+      this.removeIfExists(this.annotatedKey(s3Key)),
+    ]);
+  }
+
+  private async removeIfExists(s3Key: string): Promise<void> {
+    try {
+      await remove({ path: s3Key });
+    } catch (error) {
+      console.warn(`Skipping removal of ${s3Key}:`, error);
+    }
   }
 }
