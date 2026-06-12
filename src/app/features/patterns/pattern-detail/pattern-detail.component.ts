@@ -10,6 +10,7 @@ import { CategoryService } from '../../categories/category.service';
 import { StorageService } from '../storage.service';
 import { PdfViewerComponent } from '../pdf-viewer/pdf-viewer.component';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { PatternEditFormComponent } from './pattern-edit-form/pattern-edit-form.component';
 import type { Category } from '../../../core/models';
 
 @Component({
@@ -21,6 +22,7 @@ import type { Category } from '../../../core/models';
     ToastModule,
     PdfViewerComponent,
     ConfirmDialogComponent,
+    PatternEditFormComponent,
   ],
   providers: [MessageService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,7 +36,10 @@ export class PatternDetailComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly id = input.required<string>();
+  /** Bound from the `?edit=1` query param to open the page in edit mode. */
+  readonly edit = input<string>();
 
+  protected readonly editing = signal(false);
   protected readonly pattern = signal<Pattern | null>(null);
   protected readonly pdfUrl = signal<string | null>(null);
   protected readonly categories = signal<Category[]>([]);
@@ -51,6 +56,7 @@ export class PatternDetailComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.editing.set(Boolean(this.edit()));
     void this.loadCategories();
     void this.loadPattern();
   }
@@ -112,6 +118,16 @@ export class PatternDetailComponent implements OnInit {
     } finally {
       this.savingAnnotations.set(false);
     }
+  }
+
+  protected onEditSaved(updated: Pattern): void {
+    this.pattern.set(updated);
+    this.editing.set(false);
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Saved',
+      detail: 'Pattern updated.',
+    });
   }
 
   protected async deleteConfirmed(): Promise<void> {
