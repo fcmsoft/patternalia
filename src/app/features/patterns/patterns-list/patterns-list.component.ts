@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  DestroyRef,
+  inject,
+  signal,
+  OnInit,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -14,6 +21,13 @@ import { CategoryService } from '../../categories/category.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import type { Category } from '../../../core/models';
+
+// A freshly uploaded pattern has no thumbnail until the resize lambda runs
+// (a few seconds). When a thumbnail is missing for a pattern this young we
+// poll for it so it appears without a page refresh.
+const THUMBNAIL_RETRY_WINDOW_MS = 5 * 60 * 1000;
+const THUMBNAIL_RETRY_DELAY_MS = 3000;
+const THUMBNAIL_MAX_RETRIES = 10;
 
 const CRAFT_LABELS: Record<CraftType, string> = {
   knitting: 'Knitting',
@@ -49,6 +63,8 @@ export class PatternsListComponent implements OnInit {
 
   protected readonly patterns = signal<Pattern[]>([]);
   protected readonly thumbnailUrls = signal<Record<string, string>>({});
+  private readonly thumbnailRetries = new Map<string, number>();
+  private readonly pendingRetryTimers = new Set<ReturnType<typeof setTimeout>>();
   protected readonly categories = signal<Category[]>([]);
   protected readonly loading = signal(true);
   protected readonly deleteDialogVisible = signal(false);
@@ -67,6 +83,10 @@ export class PatternsListComponent implements OnInit {
     search: [''],
     craft: [null as CraftType | null],
   });
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.pendingRetryTimers.forEach(clearTimeout));
+  }
 
   ngOnInit(): void {
     void this.loadCategories();
@@ -131,6 +151,38 @@ export class PatternsListComponent implements OnInit {
       const { [patternId]: _removed, ...rest } = urls;
       return rest;
     });
+    this.scheduleThumbnailRetry(patternId);
+  }
+
+  private scheduleThumbnailRetry(patternId: string): void {
+    const pattern = this.patterns().find((p) => p.id === patternId);
+    if (!pattern?.createdAt) return;
+    const age = Date.now() - new Date(pattern.createdAt).getTime();
+    if (!Number.isFinite(age) || age > THUMBNAIL_RETRY_WINDOW_MS) return;
+
+    const attempts = this.thumbnailRetries.get(patternId) ?? 0;
+    if (attempts >= THUMBNAIL_MAX_RETRIES) return;
+    this.thumbnailRetries.set(patternId, attempts + 1);
+
+    const timer = setTimeout(() => {
+      this.pendingRetryTimers.delete(timer);
+      void this.retryThumbnail(patternId);
+    }, THUMBNAIL_RETRY_DELAY_MS);
+    this.pendingRetryTimers.add(timer);
+  }
+
+  private async retryThumbnail(patternId: string): Promise<void> {
+    const pattern = this.patterns().find((p) => p.id === patternId);
+    if (!pattern) return;
+    const url = await this.storageService.getUrlIfExists(
+      this.storageService.thumbnailKey(pattern.s3Key),
+    );
+    if (url) {
+      this.thumbnailRetries.delete(patternId);
+      this.thumbnailUrls.update((urls) => ({ ...urls, [patternId]: url }));
+    } else {
+      this.scheduleThumbnailRetry(patternId);
+    }
   }
 
   protected toggleCategory(id: string): void {
