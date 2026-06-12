@@ -1,8 +1,16 @@
 import { Injectable } from '@angular/core';
 import { uploadData, getUrl, remove } from 'aws-amplify/storage';
 
+// Presigned URLs can't outlive the Cognito temporary credentials (~1h), so
+// 1h is the practical maximum.
+const URL_EXPIRES_IN_SECONDS = 3600;
+// Refresh cached URLs a bit before they expire so in-flight image loads
+// never race the expiry.
+const URL_CACHE_MARGIN_MS = 5 * 60 * 1000;
+
 @Injectable({ providedIn: 'root' })
 export class StorageService {
+  private readonly urlCache = new Map<string, { url: string; freshUntil: number }>();
   async upload(file: File): Promise<string> {
     console.log('Uploading file:', file);
     const s3Key = `patterns/${file.name}`;
@@ -21,9 +29,17 @@ export class StorageService {
   }
 
   async getUrl(s3Key: string): Promise<string> {
-    const { url } = await getUrl({
+    const cached = this.urlCache.get(s3Key);
+    if (cached && cached.freshUntil > Date.now()) {
+      return cached.url;
+    }
+    const { url, expiresAt } = await getUrl({
       path: s3Key,
-      options: { validateObjectExistence: false },
+      options: { validateObjectExistence: false, expiresIn: URL_EXPIRES_IN_SECONDS },
+    });
+    this.urlCache.set(s3Key, {
+      url: url.toString(),
+      freshUntil: expiresAt.getTime() - URL_CACHE_MARGIN_MS,
     });
     return url.toString();
   }
@@ -62,6 +78,9 @@ export class StorageService {
 
   /** Removes a pattern's original file plus its thumbnail and annotated copy. */
   async removePatternFiles(s3Key: string): Promise<void> {
+    for (const key of [s3Key, this.thumbnailKey(s3Key), this.annotatedKey(s3Key)]) {
+      this.urlCache.delete(key);
+    }
     await remove({ path: s3Key });
     // Thumbnail and annotated copy may never have been created.
     await Promise.all([

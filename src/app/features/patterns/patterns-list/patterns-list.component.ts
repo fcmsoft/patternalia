@@ -9,6 +9,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { Pattern, CraftType } from '../../../core/models';
 import { PatternService } from '../pattern.service';
+import { StorageService } from '../storage.service';
 import { CategoryService } from '../../categories/category.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -42,10 +43,12 @@ const CRAFT_LABELS: Record<CraftType, string> = {
 export class PatternsListComponent implements OnInit {
   private readonly patternService = inject(PatternService);
   private readonly categoryService = inject(CategoryService);
+  private readonly storageService = inject(StorageService);
   private readonly messageService = inject(MessageService);
   private readonly fb = inject(FormBuilder);
 
   protected readonly patterns = signal<Pattern[]>([]);
+  protected readonly thumbnailUrls = signal<Record<string, string>>({});
   protected readonly categories = signal<Category[]>([]);
   protected readonly loading = signal(true);
   protected readonly deleteDialogVisible = signal(false);
@@ -58,9 +61,10 @@ export class PatternsListComponent implements OnInit {
     ...Object.entries(CRAFT_LABELS).map(([value, label]) => ({ label, value })),
   ];
 
+  protected readonly selectedCategoryIds = signal<string[]>([]);
+
   protected readonly filterForm = this.fb.group({
     search: [''],
-    categoryId: [null as string | null],
     craft: [null as CraftType | null],
   });
 
@@ -85,14 +89,16 @@ export class PatternsListComponent implements OnInit {
 
   private async loadPatterns(): Promise<void> {
     this.loading.set(true);
-    const { search, categoryId, craft } = this.filterForm.getRawValue();
+    const { search, craft } = this.filterForm.getRawValue();
+    const categoryIds = this.selectedCategoryIds();
     try {
       const patterns = await this.patternService.getAll({
         search: search || undefined,
-        categoryId: categoryId || undefined,
+        categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
         craft: craft || undefined,
       });
       this.patterns.set(patterns);
+      void this.loadThumbnails(patterns);
     } catch {
       this.messageService.add({
         severity: 'error',
@@ -102,6 +108,41 @@ export class PatternsListComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private async loadThumbnails(patterns: Pattern[]): Promise<void> {
+    const entries = await Promise.all(
+      patterns.map(async (pattern) => {
+        try {
+          const url = await this.storageService.getUrl(
+            this.storageService.thumbnailKey(pattern.s3Key),
+          );
+          return [pattern.id, url] as const;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    this.thumbnailUrls.set(Object.fromEntries(entries.filter((entry) => entry !== null)));
+  }
+
+  protected thumbnailFailed(patternId: string): void {
+    this.thumbnailUrls.update((urls) => {
+      const { [patternId]: _removed, ...rest } = urls;
+      return rest;
+    });
+  }
+
+  protected toggleCategory(id: string): void {
+    this.selectedCategoryIds.update((ids) =>
+      ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
+    );
+    void this.loadPatterns();
+  }
+
+  protected clearCategoryFilter(): void {
+    this.selectedCategoryIds.set([]);
+    void this.loadPatterns();
   }
 
   protected getCategoryName(id: string): string {

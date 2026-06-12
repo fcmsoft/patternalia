@@ -11,7 +11,8 @@ import {
 } from '../../core/models';
 
 export interface PatternFilters {
-  categoryId?: string;
+  /** Patterns matching any of these categories pass the filter. */
+  categoryIds?: string[];
   craft?: CraftType;
   search?: string;
 }
@@ -105,7 +106,8 @@ export class PatternService {
 
     return patterns.filter((pattern) => {
       const matchesCategory =
-        !filters?.categoryId || pattern.categoryIds.includes(filters.categoryId);
+        !filters?.categoryIds?.length ||
+        pattern.categoryIds.some((id) => filters.categoryIds!.includes(id));
       const matchesCraft = !filters?.craft || pattern.craft === filters.craft;
       const matchesSearch =
         !search ||

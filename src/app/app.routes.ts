@@ -63,13 +63,6 @@ export const routes: Routes = [
             (m) => m.PatternDetailComponent,
           ),
       },
-      {
-        path: 'patterns/:id/edit',
-        loadComponent: () =>
-          import('./features/patterns/pattern-edit/pattern-edit.component').then(
-            (m) => m.PatternEditComponent,
-          ),
-      },
     ],
   },
 ];
