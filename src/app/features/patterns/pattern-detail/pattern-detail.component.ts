@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, input } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal,
+  computed,
+  OnInit,
+  input,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
@@ -46,6 +54,7 @@ export class PatternDetailComponent implements OnInit {
   protected readonly loading = signal(true);
   protected readonly deleteDialogVisible = signal(false);
   protected readonly savingAnnotations = signal(false);
+  protected readonly panelVisible = signal(true);
 
   protected readonly patternCategories = computed(() => {
     const cats = this.categories();
