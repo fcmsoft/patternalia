@@ -15,7 +15,8 @@ import { SelectModule } from 'primeng/select';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { MessageService } from 'primeng/api';
 import { PatternService } from '../../pattern.service';
-import { RavelryService, RavelryPattern } from '../../../../shared/services/ravelry.service';
+import { RavelrySearchComponent } from '../../../../shared/components/ravelry-search/ravelry-search.component';
+import { RavelryPattern } from '../../../../shared/services/ravelry.service';
 import { CraftType, Pattern } from '../../../../core/models';
 import type { Category } from '../../../../core/models';
 
@@ -25,14 +26,21 @@ import type { Category } from '../../../../core/models';
  */
 @Component({
   selector: 'app-pattern-edit-form',
-  imports: [ReactiveFormsModule, ButtonModule, InputTextModule, TextareaModule, SelectModule, MultiSelectModule],
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    InputTextModule,
+    TextareaModule,
+    SelectModule,
+    MultiSelectModule,
+    RavelrySearchComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pattern-edit-form.component.html',
 })
 export class PatternEditFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly patternService = inject(PatternService);
-  private readonly ravelryService = inject(RavelryService);
   private readonly messageService = inject(MessageService);
 
   readonly pattern = input.required<Pattern>();
@@ -41,9 +49,6 @@ export class PatternEditFormComponent implements OnInit {
   readonly cancelled = output<void>();
 
   protected readonly saving = signal(false);
-  protected readonly ravelryQuery = signal('');
-  protected readonly ravelryResults = signal<RavelryPattern[]>([]);
-  protected readonly ravelrySearching = signal(false);
   protected readonly linkedRavelryPattern = signal<RavelryPattern | null>(null);
 
   protected readonly craftOptions: { label: string; value: CraftType }[] = [
@@ -88,35 +93,6 @@ export class PatternEditFormComponent implements OnInit {
         permalink: '',
       });
     }
-  }
-
-  protected searchRavelry(): void {
-    const q = this.ravelryQuery();
-    if (!q.trim()) return;
-    this.ravelrySearching.set(true);
-    this.ravelryService.search(q).subscribe({
-      next: (res) => {
-        this.ravelryResults.set(res.patterns);
-        this.ravelrySearching.set(false);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Ravelry search failed.',
-        });
-        this.ravelrySearching.set(false);
-      },
-    });
-  }
-
-  protected linkRavelry(rv: RavelryPattern): void {
-    this.linkedRavelryPattern.set(rv);
-    this.ravelryResults.set([]);
-  }
-
-  protected unlinkRavelry(): void {
-    this.linkedRavelryPattern.set(null);
   }
 
   protected buildLinkGroup() {

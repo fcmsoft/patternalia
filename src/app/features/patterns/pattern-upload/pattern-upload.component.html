@@ -114,70 +114,12 @@
     <!-- Ravelry link -->
     <div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
       <h2 class="font-semibold text-gray-700">🧵 Link to Ravelry</h2>
-
-      @if (linkedRavelryPattern(); as rv) {
-        <div class="flex items-center justify-between bg-indigo-50 rounded-lg px-4 py-3">
-          <div>
-            <p class="font-medium text-indigo-800">{{ rv.name }}</p>
-            @if (rv.pattern_author) {
-              <p class="text-sm text-indigo-600">by {{ rv.pattern_author.name }}</p>
-            }
-          </div>
-          <button
-            pButton
-            type="button"
-            label="Unlink"
-            severity="secondary"
-            size="small"
-            (click)="unlinkRavelry()"
-          ></button>
-        </div>
-      } @else {
-        <div class="flex gap-2">
-          <input
-            pInputText
-            type="search"
-            [value]="ravelryQuery()"
-            (input)="ravelryQuery.set($any($event.target).value)"
-            placeholder="Search Ravelry patterns…"
-            class="flex-1"
-            aria-label="Search Ravelry"
-            (keydown.enter)="searchRavelry(); $event.preventDefault()"
-          />
-          <button
-            pButton
-            type="button"
-            label="Search"
-            [loading]="ravelrySearching()"
-            (click)="searchRavelry()"
-          ></button>
-        </div>
-
-        @if (ravelryResults().length > 0) {
-          <ul
-            class="border border-gray-200 rounded-lg divide-y max-h-48 overflow-y-auto"
-            role="listbox"
-            aria-label="Ravelry search results"
-          >
-            @for (rv of ravelryResults(); track rv.id) {
-              <li>
-                <button
-                  type="button"
-                  class="w-full text-left px-4 py-2 hover:bg-indigo-50 focus:outline-none focus:bg-indigo-50 text-sm"
-                  (click)="linkRavelry(rv)"
-                  role="option"
-                  [attr.aria-selected]="false"
-                >
-                  <span class="font-medium">{{ rv.name }}</span>
-                  @if (rv.pattern_author) {
-                    <span class="text-gray-500"> — {{ rv.pattern_author.name }}</span>
-                  }
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      }
+      <app-ravelry-search
+        [linkedPattern]="linkedRavelryPattern()"
+        placeholder="Search Ravelry patterns…"
+        (patternLinked)="linkedRavelryPattern.set($event)"
+        (patternUnlinked)="linkedRavelryPattern.set(null)"
+      />
     </div>
 
     <!-- Other links -->

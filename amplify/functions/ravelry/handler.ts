@@ -25,15 +25,20 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     return { statusCode: 404, body: JSON.stringify({ message: 'Not found' }) };
   }
 
-  const response = await fetch(`${RAVELRY_BASE}${ravelryPath}`, {
-    headers: { Authorization: auth },
-  });
+  try {
+    const response = await fetch(`${RAVELRY_BASE}${ravelryPath}`, {
+      headers: { Authorization: auth },
+    });
 
-  const data: unknown = await response.json();
+    const data: unknown = await response.json();
 
-  return {
-    statusCode: response.status,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  };
+    return {
+      statusCode: response.status,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    };
+  } catch (err) {
+    console.error('Ravelry proxy error:', err);
+    return { statusCode: 502, body: JSON.stringify({ message: 'Ravelry request failed' }) };
+  }
 };

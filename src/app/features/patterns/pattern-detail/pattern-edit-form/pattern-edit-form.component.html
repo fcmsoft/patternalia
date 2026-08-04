@@ -69,66 +69,11 @@
   <!-- Ravelry link -->
   <div class="space-y-2">
     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">🧵 Ravelry link</p>
-
-    @if (linkedRavelryPattern(); as rv) {
-      <div class="flex items-center justify-between gap-2 bg-indigo-50 rounded-lg px-3 py-2">
-        <p class="text-sm font-medium text-indigo-800 truncate">{{ rv.name }}</p>
-        <button
-          pButton
-          type="button"
-          label="Unlink"
-          severity="secondary"
-          size="small"
-          (click)="unlinkRavelry()"
-        ></button>
-      </div>
-    } @else {
-      <div class="flex gap-2">
-        <input
-          pInputText
-          type="search"
-          [value]="ravelryQuery()"
-          (input)="ravelryQuery.set($any($event.target).value)"
-          placeholder="Search Ravelry…"
-          class="flex-1 min-w-0"
-          aria-label="Search Ravelry"
-          (keydown.enter)="searchRavelry(); $event.preventDefault()"
-        />
-        <button
-          pButton
-          type="button"
-          icon="pi pi-search"
-          [loading]="ravelrySearching()"
-          (click)="searchRavelry()"
-          aria-label="Search Ravelry"
-        ></button>
-      </div>
-
-      @if (ravelryResults().length > 0) {
-        <ul
-          class="border border-gray-200 rounded-lg divide-y max-h-48 overflow-y-auto"
-          role="listbox"
-          aria-label="Ravelry results"
-        >
-          @for (rv of ravelryResults(); track rv.id) {
-            <li>
-              <button
-                type="button"
-                class="w-full text-left px-3 py-2 hover:bg-indigo-50 text-sm focus:outline-none focus:bg-indigo-50"
-                (click)="linkRavelry(rv)"
-                role="option"
-                [attr.aria-selected]="false"
-              >
-                <span class="font-medium">{{ rv.name }}</span>
-                @if (rv.pattern_author) {
-                  <span class="text-gray-500"> — {{ rv.pattern_author.name }}</span>
-                }
-              </button>
-            </li>
-          }
-        </ul>
-      }
-    }
+    <app-ravelry-search
+      [linkedPattern]="linkedRavelryPattern()"
+      (patternLinked)="linkedRavelryPattern.set($event)"
+      (patternUnlinked)="linkedRavelryPattern.set(null)"
+    />
   </div>
 
   <!-- Other links -->

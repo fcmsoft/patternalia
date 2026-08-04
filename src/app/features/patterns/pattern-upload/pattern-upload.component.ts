@@ -13,7 +13,8 @@ import { MessageService } from 'primeng/api';
 import { PatternService } from '../pattern.service';
 import { CategoryService } from '../../categories/category.service';
 import { StorageService } from '../storage.service';
-import { RavelryService, RavelryPattern } from '../../../shared/services/ravelry.service';
+import { RavelrySearchComponent } from '../../../shared/components/ravelry-search/ravelry-search.component';
+import { RavelryPattern } from '../../../shared/services/ravelry.service';
 import { CraftType } from '../../../core/models';
 import type { Category } from '../../../core/models';
 
@@ -29,6 +30,7 @@ import type { Category } from '../../../core/models';
     MultiSelectModule,
     ToastModule,
     MessageModule,
+    RavelrySearchComponent,
   ],
   providers: [MessageService],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,7 +41,6 @@ export class PatternUploadComponent implements OnInit {
   private readonly patternService = inject(PatternService);
   private readonly categoryService = inject(CategoryService);
   private readonly storageService = inject(StorageService);
-  private readonly ravelryService = inject(RavelryService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
 
@@ -47,9 +48,6 @@ export class PatternUploadComponent implements OnInit {
   protected readonly saving = signal(false);
   protected readonly uploading = signal(false);
   protected readonly selectedFile = signal<File | null>(null);
-  protected readonly ravelryQuery = signal('');
-  protected readonly ravelryResults = signal<RavelryPattern[]>([]);
-  protected readonly ravelrySearching = signal(false);
   protected readonly linkedRavelryPattern = signal<RavelryPattern | null>(null);
 
   protected readonly craftOptions: { label: string; value: CraftType }[] = [
@@ -102,35 +100,13 @@ export class PatternUploadComponent implements OnInit {
       return;
     }
     this.selectedFile.set(file);
-  }
-
-  protected searchRavelry(): void {
-    const q = this.ravelryQuery();
-    if (!q.trim()) return;
-    this.ravelrySearching.set(true);
-    this.ravelryService.search(q).subscribe({
-      next: (res) => {
-        this.ravelryResults.set(res.patterns);
-        this.ravelrySearching.set(false);
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Ravelry search failed.',
-        });
-        this.ravelrySearching.set(false);
-      },
-    });
-  }
-
-  protected linkRavelry(pattern: RavelryPattern): void {
-    this.linkedRavelryPattern.set(pattern);
-    this.ravelryResults.set([]);
-  }
-
-  protected unlinkRavelry(): void {
-    this.linkedRavelryPattern.set(null);
+    if (file && !this.form.controls.title.value) {
+      const title = file.name
+        .replace(/\.pdf$/i, '')
+        .replace(/[-_]+/g, ' ')
+        .trim();
+      this.form.controls.title.setValue(title);
+    }
   }
 
   protected buildLinkGroup() {
