@@ -1,6 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiService } from './api.service';
+import outputs from '../../../../amplify_outputs.json';
+
+// amplify_outputs.json gains a `custom` section after sandbox/deploy
+type ExtendedOutputs = typeof outputs & { custom?: { ravelryProxyUrl?: string } };
 
 export interface RavelryPattern {
   id: number;
@@ -19,16 +23,18 @@ export interface RavelrySearchResult {
 
 @Injectable({ providedIn: 'root' })
 export class RavelryService {
-  private readonly api = inject(ApiService);
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = ((outputs as ExtendedOutputs).custom?.ravelryProxyUrl ?? '').replace(
+    /\/$/,
+    '',
+  );
 
   search(query: string, page = 1): Observable<RavelrySearchResult> {
-    return this.api.get<RavelrySearchResult>('/ravelry/search', {
-      query,
-      page: String(page),
-    });
+    const params = new HttpParams().set('query', query).set('page', String(page));
+    return this.http.get<RavelrySearchResult>(`${this.baseUrl}/ravelry/search`, { params });
   }
 
   getPattern(id: number): Observable<{ pattern: RavelryPattern }> {
-    return this.api.get<{ pattern: RavelryPattern }>(`/ravelry/patterns/${id}`);
+    return this.http.get<{ pattern: RavelryPattern }>(`${this.baseUrl}/ravelry/patterns/${id}`);
   }
 }

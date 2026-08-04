@@ -6,8 +6,11 @@ import {
   signal,
   OnInit,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Subject, EMPTY, from } from 'rxjs';
+import { switchMap, catchError, tap } from 'rxjs/operators';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
@@ -60,6 +63,7 @@ export class PatternsListComponent implements OnInit {
   private readonly storageService = inject(StorageService);
   private readonly messageService = inject(MessageService);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly patterns = signal<Pattern[]>([]);
   protected readonly thumbnailUrls = signal<Record<string, string>>({});
@@ -84,14 +88,42 @@ export class PatternsListComponent implements OnInit {
     craft: [null as CraftType | null],
   });
 
+  private readonly refresh$ = new Subject<void>();
+
   constructor() {
-    inject(DestroyRef).onDestroy(() => this.pendingRetryTimers.forEach(clearTimeout));
+    this.destroyRef.onDestroy(() => this.pendingRetryTimers.forEach(clearTimeout));
+
+    this.refresh$
+      .pipe(
+        tap(() => this.loading.set(true)),
+        switchMap(() =>
+          from(this.fetchPatterns()).pipe(
+            catchError(() => {
+              this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to load patterns.',
+              });
+              this.loading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe(({ patterns, thumbnails }) => {
+        this.patterns.set(patterns);
+        this.thumbnailUrls.set(thumbnails);
+        this.loading.set(false);
+      });
   }
 
   ngOnInit(): void {
     void this.loadCategories();
-    void this.loadPatterns();
-    this.filterForm.valueChanges.subscribe(() => void this.loadPatterns());
+    this.filterForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.refresh$.next());
+    this.refresh$.next();
   }
 
   private async loadCategories(): Promise<void> {
@@ -107,30 +139,14 @@ export class PatternsListComponent implements OnInit {
     }
   }
 
-  private async loadPatterns(): Promise<void> {
-    this.loading.set(true);
+  private async fetchPatterns(): Promise<{ patterns: Pattern[]; thumbnails: Record<string, string> }> {
     const { search, craft } = this.filterForm.getRawValue();
     const categoryIds = this.selectedCategoryIds();
-    try {
-      const patterns = await this.patternService.getAll({
-        search: search || undefined,
-        categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
-        craft: craft || undefined,
-      });
-      this.patterns.set(patterns);
-      void this.loadThumbnails(patterns);
-    } catch {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'Failed to load patterns.',
-      });
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  private async loadThumbnails(patterns: Pattern[]): Promise<void> {
+    const patterns = await this.patternService.getAll({
+      search: search || undefined,
+      categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
+      craft: craft || undefined,
+    });
     const entries = await Promise.all(
       patterns.map(async (pattern) => {
         try {
@@ -143,7 +159,10 @@ export class PatternsListComponent implements OnInit {
         }
       }),
     );
-    this.thumbnailUrls.set(Object.fromEntries(entries.filter((entry) => entry !== null)));
+    return {
+      patterns,
+      thumbnails: Object.fromEntries(entries.filter((entry) => entry !== null)),
+    };
   }
 
   protected thumbnailFailed(patternId: string): void {
@@ -189,12 +208,12 @@ export class PatternsListComponent implements OnInit {
     this.selectedCategoryIds.update((ids) =>
       ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id],
     );
-    void this.loadPatterns();
+    this.refresh$.next();
   }
 
   protected clearCategoryFilter(): void {
     this.selectedCategoryIds.set([]);
-    void this.loadPatterns();
+    this.refresh$.next();
   }
 
   protected getCategoryName(id: string): string {

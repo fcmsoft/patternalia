@@ -1,6 +1,4 @@
 export const environment = {
-  production: false,
-  apiUrl: 'https://YOUR_API_GATEWAY_URL/dev',
   amplify: {
     Auth: {
       Cognito: {
